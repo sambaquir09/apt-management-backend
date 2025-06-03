@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  gis_backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: gis_backend
+    ports:
+      - "3000:8000"
+    environment:
+      - PORT=8000
+    volumes:
+      - .:/var/www/html
+      - ./vendor:/var/www/html/vendor # Mount the vendor directory
+      - ./storage:/var/www/html/storage # Ensure storage is writable
+    depends_on:
+      - postgres
+    networks:
+      - laravel_network
+
+  composer:
+    image: composer:latest
+    container_name: composer_gis
+    working_dir: /var/www/html
+    volumes:
+      - .:/var/www/html
+    command: ["composer", "install", "--optimize-autoloader"]
+
+  postgres:
+    image: postgis/postgis:15-3.3
+    container_name: postgres_db_gis
+    environment:
+      POSTGRES_USER: laravel
+      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: laravel_db
+      POSTGRES_HOST_AUTH_METHOD: trust
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - laravel_network
+
+networks:
+  laravel_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
